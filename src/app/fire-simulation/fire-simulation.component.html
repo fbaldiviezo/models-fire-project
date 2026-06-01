@@ -1,0 +1,245 @@
+<div class="simulation-container">
+  <!-- Header Section -->
+  <header class="simulation-header">
+    <div class="header-content">
+      <div class="badge">Autómatas Celulares</div>
+      <h1>Incendios Forestales <span>Simulador</span></h1>
+      <p>Explora cómo el viento, la inclinación del terreno y la sequedad influyen en la propagación del fuego en tiempo real.</p>
+    </div>
+  </header>
+
+  <div class="simulation-body">
+    <!-- Left Panel: Canvas Board -->
+    <div class="board-card">
+      <div class="board-header">
+        <div class="status-indicator" [class.active]="isRunning()">
+          <span class="pulse-dot"></span>
+          {{ isRunning() ? 'Ejecutando Simulación' : 'Simulación Pausada' }}
+        </div>
+        <div class="board-actions">
+          <button (click)="seedRandomFires()" title="Generar fuegos aleatorios" class="btn btn-secondary btn-small">
+            <svg xmlns="http://www.w3.org/2000/svg" height="18" viewBox="0 -960 960 960" width="18" fill="currentColor">
+              <path d="M480-120q-150 0-255-105T120-480q0-150 105-255t255-105q14 0 27.5 1t26.5 3l-64 64q-47-13-95 2T271-615q-53 53-72 121.5T221-351q44-121 133-195.5T560-621v61q0 17 11.5 28.5T600-520q17 0 28.5-11.5T640-560v-200q0-17-11.5-28.5T600-800H400q-17 0-28.5 11.5T360-760q0 17 11.5 28.5T400-720h116l-50 50q-17 1-32.5 1T400-671q-121 0-205.5 84.5T110-381q0 121 84.5 205.5T400-91q121 0 205.5-84.5T690-381q0-17-11.5-28.5T650-421q-17 0-28.5 11.5T610-381q0 88-61 149t-149 61q-88 0-149-61t-61-149q0-54 24.5-99.5T427-508l213-213 148 148q11 11 27 11t27-11q11-11 11-27t-11-27L694-775l79-79q11-11 27-11t27 11q11 11 11 27t-11 27l-94 94 148 148q11 11 11 27.5T881-374q-11 11-27 11t-27-11L679-522l-51 51q64 22 108 72.5T790-281q0 67-25.5 125.5T695-53q-44 44-102.5 69.5T480-120Z"/>
+            </svg>
+            Chispa Aleatoria
+          </button>
+        </div>
+      </div>
+      
+      <div class="canvas-wrapper">
+        <canvas #simulationCanvas
+                (click)="handleCanvasClick($event)"
+                (mousedown)="handleMouseDown($event)"
+                (mousemove)="handleMouseMove($event)"
+                (mouseup)="handleMouseUpOrLeave()"
+                (mouseleave)="handleMouseUpOrLeave()"
+                id="simulationCanvas"
+                class="simulation-canvas">
+        </canvas>
+      </div>
+
+      <div class="canvas-legend">
+        <div class="legend-item"><span class="legend-dot green"></span> Pastizal Intacto</div>
+        <div class="legend-item"><span class="legend-dot red pulse"></span> Foco de Fuego</div>
+        <div class="legend-item"><span class="legend-dot grey"></span> Ceniza/Quemado</div>
+      </div>
+      <div class="canvas-tip">
+        💡 Haz clic o mantén pulsado y arrastra sobre el pastizal para plantar fuegos.
+      </div>
+    </div>
+
+    <!-- Right Panel: Controls & Telemetry -->
+    <div class="controls-panel">
+      <!-- Main Actions -->
+      <div class="panel-card actions-card">
+        <h2>Simulación</h2>
+        <div class="action-grid">
+          <button (click)="toggleSimulation()" 
+                  class="btn" 
+                  [class.btn-primary]="!isRunning()" 
+                  [class.btn-danger]="isRunning()"
+                  id="btn-play-pause">
+            @if (isRunning()) {
+              <svg xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 -960 960 960" width="20" fill="currentColor">
+                <path d="M560-200v-560h160v560H560Zm-320 0v-560h160v560H240Z"/>
+              </svg>
+              Pausar
+            } @else {
+              <svg xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 -960 960 960" width="20" fill="currentColor">
+                <path d="M320-203v-554l440 277-440 277Z"/>
+              </svg>
+              Iniciar
+            }
+          </button>
+
+          <button (click)="stepSimulation()" 
+                  class="btn btn-secondary" 
+                  [disabled]="isRunning()"
+                  title="Avanzar un fotograma"
+                  id="btn-step">
+            <svg xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 -960 960 960" width="20" fill="currentColor">
+              <path d="M660-240v-480h80v480h-80Zm-440 0v-480l380 240-380 240Z"/>
+            </svg>
+            Paso a Paso
+          </button>
+
+          <button (click)="resetSimulation()" 
+                  class="btn btn-dark" 
+                  title="Reiniciar toda la grilla"
+                  id="btn-reset">
+            <svg xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 -960 960 960" width="20" fill="currentColor">
+              <path d="M480-80q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q133 0 226.5-93.5T800-480q0-133-93.5-226.5T480-800q-133 0-226.5 93.5T160-480q0 133 93.5 226.5T480-160Z"/>
+            </svg>
+            Reiniciar
+          </button>
+        </div>
+
+        <div class="control-row speed-control">
+          <div class="control-label">
+            <span>Velocidad de Simulación</span>
+            <span class="value-badge">{{ ticksPerSecond() }} Tps</span>
+          </div>
+          <input type="range" 
+                 min="1" 
+                 max="60" 
+                 [value]="ticksPerSecond()"
+                 (input)="ticksPerSecond.set($any($event.target).valueAsNumber)"
+                 class="slider"
+                 id="slider-tps" />
+        </div>
+      </div>
+
+      <!-- Environment Parameters -->
+      <div class="panel-card environment-card">
+        <h2>Parámetros Ambientales</h2>
+
+        <!-- Wind Speed -->
+        <div class="control-row">
+          <div class="control-label">
+            <span>Velocidad del Viento</span>
+            <span class="value-badge highlight-blue">{{ fireEngine.windSpeed() }} km/h</span>
+          </div>
+          <input type="range" 
+                 min="0" 
+                 max="30" 
+                 [ngModel]="fireEngine.windSpeed()"
+                 (ngModelChange)="fireEngine.windSpeed.set($event)"
+                 class="slider"
+                 id="slider-wind-speed" />
+          <div class="slider-ticks">
+            <span>Calma (0)</span>
+            <span>Brisa (15)</span>
+            <span>Vendaval (30)</span>
+          </div>
+        </div>
+
+        <!-- Slope -->
+        <div class="control-row">
+          <div class="control-label">
+            <span>Inclinación del Terreno (Pendiente)</span>
+            <span class="value-badge highlight-orange">{{ fireEngine.slope() }}°</span>
+          </div>
+          <input type="range" 
+                 min="0" 
+                 max="60" 
+                 [ngModel]="fireEngine.slope()"
+                 (ngModelChange)="fireEngine.slope.set($event)"
+                 class="slider"
+                 id="slider-slope" />
+          <div class="slider-ticks">
+            <span>Plano (0°)</span>
+            <span>Moderado (30°)</span>
+            <span>Empinado (60°)</span>
+          </div>
+        </div>
+
+        <!-- Wind Direction -->
+        <div class="control-row direction-control">
+          <div class="control-label">
+            <span>Procedencia del Viento</span>
+            <span class="value-badge highlight-purple">Hacia: {{ 
+              fireEngine.windDirection() === 'N' ? 'Sur (S)' :
+              fireEngine.windDirection() === 'S' ? 'Norte (N)' :
+              fireEngine.windDirection() === 'E' ? 'Oeste (W)' :
+              fireEngine.windDirection() === 'W' ? 'Este (E)' :
+              fireEngine.windDirection() === 'NE' ? 'Suroeste (SW)' :
+              fireEngine.windDirection() === 'NW' ? 'Sureste (SE)' :
+              fireEngine.windDirection() === 'SE' ? 'Noroeste (NW)' : 'Nordeste (NE)'
+            }}</span>
+          </div>
+          <p class="direction-subtext">El viento sopla <strong>desde</strong> la dirección seleccionada (ej. del SE sopla hacia el NW).</p>
+          
+          <div class="compass-container">
+            <div class="compass-grid">
+              @for (dir of directions; track dir) {
+                <button (click)="selectWindDirection(dir)"
+                        class="direction-btn"
+                        [class.active]="fireEngine.windDirection() === dir"
+                        [attr.id]="'dir-' + dir"
+                        [title]="'Soplar desde el ' + dir">
+                  {{ dir }}
+                </button>
+              }
+              <div class="compass-center">
+                <svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24" fill="currentColor"
+                     [style.transform]="'rotate(' + (
+                       fireEngine.windDirection() === 'N' ? 180 :
+                       fireEngine.windDirection() === 'NE' ? 225 :
+                       fireEngine.windDirection() === 'E' ? 270 :
+                       fireEngine.windDirection() === 'SE' ? 315 :
+                       fireEngine.windDirection() === 'S' ? 0 :
+                       fireEngine.windDirection() === 'SW' ? 45 :
+                       fireEngine.windDirection() === 'W' ? 90 : 135
+                     ) + 'deg)'">
+                  <path d="M480-160 280-360h160v-320h80v320h160L480-160Z"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Telemetry Stats -->
+      <div class="panel-card telemetry-card">
+        <h2>Reporte e Impacto de Daños</h2>
+
+        <div class="stats-grid">
+          <div class="stat-box intact">
+            <div class="stat-value">{{ stats().intact }}</div>
+            <div class="stat-label">Celdas Intactas</div>
+          </div>
+          <div class="stat-box burning">
+            <div class="stat-value">{{ stats().burning }}</div>
+            <div class="stat-label">En Combustión</div>
+          </div>
+          <div class="stat-box burnt">
+            <div class="stat-value">{{ stats().burnt }}</div>
+            <div class="stat-label">Área Calcinada</div>
+          </div>
+        </div>
+
+        <div class="progress-bar-container">
+          <div class="progress-labels">
+            <span>Distribución de Cobertura</span>
+          </div>
+          <div class="multi-progress-bar">
+            <div class="progress-segment green" 
+                 [style.width.%]="stats().intactPercent"
+                 [title]="'Pastizal Sano: ' + stats().intactPercent.toFixed(1) + '%'"></div>
+            <div class="progress-segment red" 
+                 [style.width.%]="stats().burningPercent"
+                 [title]="'Fuego Activo: ' + stats().burningPercent.toFixed(1) + '%'"></div>
+            <div class="progress-segment grey" 
+                 [style.width.%]="stats().burntPercent"
+                 [title]="'Ceniza: ' + stats().burntPercent.toFixed(1) + '%'"></div>
+          </div>
+          <div class="progress-legend">
+            <span>Sano: {{ stats().intactPercent.toFixed(1) }}%</span>
+            <span>Fuego: {{ stats().burningPercent.toFixed(1) }}%</span>
+            <span>Cenizas: {{ stats().burntPercent.toFixed(1) }}%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

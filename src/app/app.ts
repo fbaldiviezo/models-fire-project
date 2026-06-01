@@ -1,9 +1,9 @@
 import { Component, signal } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { FireSimulationComponent } from './fire-simulation/fire-simulation.component';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
+  imports: [FireSimulationComponent],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })
